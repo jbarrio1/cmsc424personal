@@ -34,7 +34,10 @@ select name from uMondayFlyers,oldest where bday != oldest.date;
 ### Order: by birthdate
 ### Output columns: customer id, name, birthdate
 queries[2] = """
-select 0;
+with DLFlyers(custid,name,bday) as (select customerid,name,birthdate from customers where frequentflieron like 'DL') 
+select custid,name,bday from DLFlyers where extract(MONTH from bday) = 1 or (extract(MONTH from bday) = 2 and extract(DAY from bday) < 15) or extract(MONTH from bday) = 12 or (extract(MONTH from bday) =11 and extract(DAY from bday)  > 15)
+order by bday;
+
 """
 
 ### 3. Write a query to find flights that have the most variance in the number of customers. 
