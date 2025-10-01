@@ -68,7 +68,8 @@ LIMIT 10;
 ### Output: only the names of the customer.
 ### Order: order by name.
 queries[4] = """
-select 0;
+with airlinecount as (select frequentflieron as airline, count(customerid) as count from customers group by frequentflieron), min_freq as (select min(count) as mini from airlinecount) 
+select name from customers where frequentflieron in (select airline from airlinecount,min_freq where count = min_freq.mini) order by name;
 """
 
 
