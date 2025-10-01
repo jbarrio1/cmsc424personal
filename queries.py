@@ -84,7 +84,11 @@ select name from customers where frequentflieron in (select airline from airline
 ### Output: name, count
 ### Order: order by count desc, name.
 queries[5] = """
-select 0;
+ with rawcount as (select customerid, count(flightdate) as freq from flewon group by customerid order by freq desc), 
+ maxfreq as (select max(freq) from rawcount), 
+ together as (select f1.customerid as c1, f2.customerid as c2  from flewon as f1, flewon as f2 where f1.customerid != f2.customerid and f1.flightid = f2.flightid and f1.flightdate = f2.flightdate), 
+ final as (select distinct c1,c2 from together where (c1,c2) in  (select distinct  r1.customerid as cust1,  r2.customerid as cust2  from rawcount as  r1 , rawcount as r2,maxfreq where r1.customerid != r2.customerid and r1.freq = r2.freq and r1.freq = maxfreq.max)), 
+ connect as ( select c1, count(c2) as count from final group by c1) select name, count from customers, connect where customers.customerid = c1 order by count desc,name;
 """
 
 ### 6. Write a query to find the percentage participation of American Airlines in each airport, relative to the other airlines.
