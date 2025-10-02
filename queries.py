@@ -137,7 +137,9 @@ select name from customers,conn where customers.customerid = conn.customerid ord
 ### Output columns: 1st flight id, 2nd flight id, source city, destination city, layover duration
 ### Order by: layover duration
 queries[9] = """
-select 0;
+with iad as (select * from flights where source = 'IAD' or dest = 'IAD'), 
+said as (select i1.flightid as f1, i1.local_arrival_time, i1.source ,  i2.flightid, i2.local_departing_time, i2.dest from iad as i1 join iad as i2 on i1.dest = i2.source and i1.dest ='IAD' and i1.airlineid = i2.airlineid) 
+select f1,flightid,source,dest, local_departing_time - local_arrival_time as dur from said where local_arrival_time < local_departing_time and (INTERVAL '1 hour' <= (local_departing_time - local_arrival_time)) and (local_departing_time - local_arrival_time <= INTERVAL '4 hour' ) order by dur;
 """
 
 
