@@ -54,9 +54,10 @@ order by bday;
 ### Order: rank, flightid
 ### HINT: You can use self join to rank flights based on the variance.
 queries[3] = """
-with flightperday as (select flightid, flightdate, count(customerid) as count from flewon group by flightid,flightdate order by flightid), 
-ranked as (select flightid, max(count) -  min(count) as var from flightperday group by flightid)           
-select count(r2.flightid) + 1 as rank, r1.flightid, r1.var from ranked as r1 left join ranked as r2 on r2.var > r1.var group by r1.flightid, r1.var order by rank,r1.flightid limit 10;
+with flightperday as (select flightid, flightdate, count(customerid) as count from flewon group by flightid,flightdate order by flightid),
+ranked as (select flightid, max(count) -  min(count) as var from flightperday group by flightid), top10 as (
+select count(r2.flightid) + 1 as rank, r1.flightid, r1.var from ranked as r1 left join ranked as r2 on r2.var > r1.var group by r1.flightid, r1.var order by rank,r1.flightid) 
+select * from top10 where rank <=10;
 """
 
 ### 4. Write a query to find the names of customers with the least common frequent flier airline.
