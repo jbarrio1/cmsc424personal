@@ -105,10 +105,7 @@ queries[5] = """
 ###         flights that exist in the flights table.
 ###       - You must not leave out airports that have no AA flights (participation of 0)
 queries[6] = """
-with aapart as ( select source ,count(source) + count(dest) as AAPart from flights where airlineid like 'AA' group by source), 
-totalpart as ( select source, count(source) + count(dest) as TotalPart from flights group by source), 
-div as (select totalpart.source, TotalPart as tp, AAPart as ap from totalpart join aapart on totalpart.source = aapart.source) select name , cast(cast(ap as float)/tp as 
-decimal(2,2)) from airports, div where airports.airportid = source;
+select 0;
 """
 
 ### 7. Write a query to find the customer/customers that taken the highest number of flights but have never flown on their frequentflier airline.
