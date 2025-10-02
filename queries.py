@@ -105,7 +105,10 @@ queries[5] = """
 ###         flights that exist in the flights table.
 ###       - You must not leave out airports that have no AA flights (participation of 0)
 queries[6] = """
-select 0;
+with aapart as ( select source ,count(source) + count(dest) as AAPart from flights where airlineid like 'AA' group by source), 
+totalpart as ( select source, count(source) + count(dest) as TotalPart from flights group by source), 
+div as (select totalpart.source, TotalPart as tp, AAPart as ap from totalpart join aapart on totalpart.source = aapart.source) select name , cast(cast(ap as float)/tp as 
+decimal(2,2)) from airports, div where airports.airportid = source;
 """
 
 ### 7. Write a query to find the customer/customers that taken the highest number of flights but have never flown on their frequentflier airline.
@@ -113,7 +116,10 @@ select 0;
 ### Output: Customer name
 ### Order: name
 queries[7] = """
-select 0;
+with high as (select customerid, count(flightdate) from flewon group by customerid order by count),
+ m as (select max(count) from high),top as ( select high.customerid, frequentflieron from high,m,customers where high.count = m.max and high.customerid = customers.customerid), 
+ match as (select top.customerid from top where not exists ( select * from flewon where top.customerid = flewon.customerid and flightid  like frequentflieron || '%')) 
+select name from customers, match where match.customerid = customers.customerid order by name;
 """
 
 ### 8. Write a query to find customers that never took flights on consecutive days.
