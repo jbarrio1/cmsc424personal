@@ -153,7 +153,10 @@ select f1,flightid,source,dest, local_departing_time - local_arrival_time as dur
 ### Note: a) If two airlines tie, then they should both get the same rank, and the next rank should be skipped. 
 ### For example, if the top two airlines have the same ratio, then there should be no rank 2, e.g., 1, 1, 3 ...
 queries[10] = """
-select 0;
+with holup as (select flightid, flights.airlineid as faid, airlines.airlineid as aid from flights join airlines on source = hub or dest = hub order by name), 
+athubc as (select faid, count(flightid) as hc from holup where faid = aid group by faid), totalc as (select airlineid, count(flightid) as tc from flights group by airlineid), 
+rowrank as ( select airlineid, cast(hc as FLOAT) / tc as loyal from athubc join totalc on faid = airlineid) 
+select name,count(r2.airlineid)+1 as rank from rowrank as r1 left join rowrank as r2 on r2.loyal > r1.loyal,airlines where r1.airlineid = airlines.airlineid group by r1.airlineid,name order by rank;
 """
 
 
