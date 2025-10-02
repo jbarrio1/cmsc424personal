@@ -113,10 +113,7 @@ select 0;
 ### Output: Customer name
 ### Order: name
 queries[7] = """
-with high as (select customerid, count(flightdate) from flewon group by customerid order by count),
- m as (select max(count) from high),top as ( select high.customerid, frequentflieron from high,m,customers where high.count = m.max and high.customerid = customers.customerid), 
- match as (select top.customerid from top where not exists ( select * from flewon where top.customerid = flewon.customerid and flightid  like frequentflieron || '%')) 
-select name from customers, match where match.customerid = customers.customerid order by name;
+select 0;
 """
 
 ### 8. Write a query to find customers that never took flights on consecutive days.
