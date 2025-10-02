@@ -123,7 +123,10 @@ select name from customers, match where match.customerid = customers.customerid 
 ### Output: customer_name
 ### Order: by customer_name
 queries[8] = """
-select 0;
+with custdates as (select * from flewon order by customerid, flightdate), 
+flewconsc as (select distinct c1.customerid from custdates as c1 where exists ( select * from custdates as c2 where c1.customerid = c2.customerid and abs(c1.flightdate- c2.flightdate) =  1 )) , 
+conn as ((select customerid from customers )except (select * from  flewconsc)) 
+select name from customers,conn where customers.customerid = conn.customerid order by name;
 """
 
 ### 9. A layover consists of set of two flights where the destination of the first flight is the same 
