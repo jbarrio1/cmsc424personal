@@ -5,7 +5,7 @@ select 0;
 """
 
 ### 1.
-queries[1] = ["", ""]
+queries[1] = ["count(customerid)","airports left outer join (flewon_cust7 natural join flights) on airportid = source"]
 ### <answer1>
 queries[1][0] = "count(customerid)"
 ### <answer2>
