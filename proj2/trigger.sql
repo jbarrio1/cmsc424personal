@@ -86,7 +86,7 @@ $$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE TRIGGER newcustomers_interact AFTER INSERT OR UPDATE OR DELETE on newcustomers
 FOR EACH ROW
-WHEN (pg_trigger_depth() = 0) 
+WHEN (pg_trigger_depth()   = 0) 
 EXECUTE PROCEDURE newcustomers_update();
 
 -- Q3
@@ -116,5 +116,5 @@ $$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE TRIGGER ffairlines_updated AFTER INSERT OR UPDATE OR DELETE on ffairlines
 FOR EACH ROW 
-WHEN (pg_trigger_depth() = 0) 
+WHEN (pg_trigger_depth() <3) 
 EXECUTE PROCEDURE ffairlines_update();
