@@ -27,7 +27,7 @@ BEGIN
          --INSERT INTO newcustomers(customerid, name, birthdate) VALUES (NEW.customerid,NEW.name,NEW.birthdate);
         END IF;
     
-    IF TG_OP = 'UPDATE' THEN z
+    IF TG_OP = 'UPDATE' THEN 
      UPDATE newcustomers SET customerid = NEW.customerid, name = NEW.name, birthdate = NEW.birthdate where customerid = NEW.customerid;
      IF NEW.frequentflieron is null THEN 
         DELETE FROM ffairlines where customerid = NEW.customerid; 
