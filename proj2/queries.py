@@ -13,11 +13,11 @@ queries[1][1] = "airports left outer join (flewon_cust7 natural join flights) on
 
 
 ### 2.
-queries[2] = ["", ""]
+queries[2] = ["select city", "group by airportid order by airportid"]
 ### <answer1>
-queries[2][0] = ""
+queries[2][0] = "select city"
 ### <answer2>
-queries[2][1] = ""
+queries[2][1] = "group by airportid,city order by airportid"
 
 ### 3.
 ### Explaination - 
