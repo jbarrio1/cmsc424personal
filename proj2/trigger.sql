@@ -32,7 +32,7 @@ BEGIN
      IF NEW.frequentflieron is null THEN 
         DELETE FROM ffairlines where customerid = NEW.customerid; 
      END IF;
-     IF NEW.frequentflieron not in (select airlineid from ffairlines where customerid = NEW.customerid) THEN 
+     IF NEW.frequentflieron not in (select airlineid from ffairlines where customerid = NEW.customerid) and not null THEN 
      points =  (with test as (select * from flights natural join (select flightid from flewon where customerid = NEW.customerid and flightid like NEW.frequentflieron || '%') 
          as newcust ) select sum (extract(hour from (local_arrival_time - local_departing_time))* 60 + extract(minute from (local_arrival_time- local_departing_time)) ) from test); 
         --INSERT INTO ffairlines(customerid,airlineid, points) VALUES (NEW.customerid, NEW.frequentflieron, points);
