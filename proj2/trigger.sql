@@ -120,3 +120,47 @@ CREATE OR REPLACE TRIGGER ffairlines_updated AFTER INSERT OR UPDATE OR DELETE on
 FOR EACH ROW 
 WHEN (pg_trigger_depth() <3) 
 EXECUTE PROCEDURE ffairlines_update();
+
+---------
+CREATE OR REPLACE FUNCTION flewon_updated() RETURNS trigger as $$ 
+DECLARE 
+-- ANY VARIABLES GO HERE 
+points_ int; 
+
+old_points int;
+ff varchar(2);
+BEGIN 
+    IF TG_OP = 'INSERT' OR TG_OP = 'UPDATE' THEN 
+    points_ = (with allpoints as (select * from flights natural join (select flightid from flewon where customerid = NEW.customerid ) as custflight), totpoints as ( select airlineid, sum(extract (hour from (local_arrival_time - local_departing_time)) * 60 + extract(minute from (local_arrival_time - local_departing_time)))
+   as points from allpoints group by airlineid) select points  from totpoints where NEW.flightid like airlineid || '%'); -- fives e
+    ff =  (with allpoints as (select * from flights natural join (select flightid from flewon where customerid = NEW.customerid ) as custflight), totpoints as ( select airlineid, sum(extract (hour from (local_arrival_time - local_departing_time)) * 60 + extract(minute from (local_arrival_time - local_departing_time)))
+   as points from allpoints group by airlineid) select airlineid  from totpoints where NEW.flightid like airlineid || '%');
+    UPDATE ffairlines SET points = points_ where customerid = NEW.customerid and airlineid = ff;
+    END IF;
+
+    IF TG_OP = 'UPDATE' THEN 
+    points_  = (with allpoints as (select * from flights natural join (select flightid from flewon where customerid = OLD.customerid ) as custflight), totpoints as ( select airlineid, sum(extract (hour from (local_arrival_time - local_departing_time)) * 60 + extract(minute from (local_arrival_time - local_departing_time)))
+   as points from allpoints group by airlineid) select points  from totpoints where OLD.flightid like airlineid || '%');
+   IF points_ is null THEN points_ = 0; END IF;
+    ff = (select airlineid from airlines where OLD.flightid like airlineid || '%');
+    UPDATE  ffairlines set points = points_ where customerid = OLD.customerid and airlineid = ff;
+
+    END IF;
+
+
+    IF TG_OP = 'DELETE'  THEN 
+    points_  = (with allpoints as (select * from flights natural join (select flightid from flewon where customerid = OLD.customerid ) as custflight), totpoints as ( select airlineid, sum(extract (hour from (local_arrival_time - local_departing_time)) * 60 + extract(minute from (local_arrival_time - local_departing_time)))
+   as points from allpoints group by airlineid) select points  from totpoints where OLD.flightid like airlineid || '%');
+    ff =  (with allpoints as (select * from flights natural join (select flightid from flewon where customerid = OLD.customerid ) as custflight), totpoints as ( select airlineid, sum(extract (hour from (local_arrival_time - local_departing_time)) * 60 + extract(minute from (local_arrival_time - local_departing_time)))
+   as points from allpoints group by airlineid) select airlineid  from totpoints where OLD.flightid like airlineid || '%');
+    UPDATE ffairlines SET points = points_ where customerid = OLD.customerid and airlineid = ff;
+    END IF;
+
+    RETURN NULL;
+END; 
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE TRIGGER flewon_update AFTER INSERT OR UPDATE OR DELETE ON flewon
+FOR EACH ROW 
+WHEN(pg_trigger_depth () = 0 )
+EXECUTE PROCEDURE flewon_updated();
