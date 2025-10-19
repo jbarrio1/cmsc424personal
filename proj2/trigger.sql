@@ -98,14 +98,14 @@ BEGIN
     IF TG_OP = 'INSERT' OR TG_OP = 'UPDATE' THEN
     -- find out after,update,or delete what airline now has the highpoints to assign to ff in customers 
     max_airline = (with max as (select max(points) as max_points from ffairlines where customerid = NEW.customerid group by customerid)
-    select airlineid from ffairlines,max where points = max_points LIMIT 1);
+    select airlineid from ffairlines,max where points = max_points order by airlineid LIMIT 1);
         UPDATE customers SET frequentflieron = max_airline where customerid = NEW.customerid;
     END IF; 
 
     IF TG_OP = 'DELETE' THEN 
     -- find the next highest or null 
     max_airline = (with max as (select max(points) as max_points from ffairlines where customerid = OLD.customerid group by customerid)
-    select airlineid from ffairlines,max where points = max_points LIMIT 1);
+    select airlineid from ffairlines,max where points = max_points order by airlineid LIMIT 1);
     UPDATE customers SET frequentflieron = max_airline where customerid = OLD.customerid;
     END IF;
 
