@@ -4,25 +4,25 @@
 -- ffairlines(custid,airlineid i.e ff, points, status )
 CREATE OR REPLACE FUNCTION customers_updated() RETURNS trigger as $$ 
 DECLARE 
-points int;
+points_ int;
 stat varchar(6);
 BEGIN
     IF TG_OP = 'INSERT' THEN
         INSERT INTO newcustomers(customerid, name, birthdate) VALUES (NEW.customerid,NEW.name,NEW.birthdate);
         IF NEW.frequentflieron is not null THEN
         -- calculate points 
-        points = (with test as (select * from flights natural join (select flightid from flewon where customerid = NEW.customerid and flightid like NEW.frequentflieron || '%') 
+        points_ = (with test as (select * from flights natural join (select flightid from flewon where customerid = NEW.customerid and flightid like NEW.frequentflieron || '%') 
          as newcust ) select sum (extract(hour from (local_arrival_time - local_departing_time))* 60 + extract(minute from (local_arrival_time- local_departing_time)) ) from test);
          --INSERT INTO newcustomers(customerid, name, birthdate) VALUES (NEW.customerid,NEW.name,NEW.birthdate);
-         IF points >= 500 THEN
+         IF points_ >= 500 THEN
          stat = 'GOLD';
-         ELSIF points < 750 and points >=500 THEN
+         ELSIF points_ < 750 and points_ >=500 THEN
          stat = 'SILVER';
          ELSE 
-         IF points is null THEN points = 0; END IF;
+         IF points_ is null THEN points_ = 0; END IF;
          stat = 'BRONZE';
          END IF;
-         INSERT INTO ffairlines(customerid,airlineid, points,status) VALUES (NEW.customerid, NEW.frequentflieron, points,stat);
+         INSERT INTO ffairlines(customerid,airlineid, points,status) VALUES (NEW.customerid, NEW.frequentflieron, points_,stat);
          END IF;
          --INSERT INTO newcustomers(customerid, name, birthdate) VALUES (NEW.customerid,NEW.name,NEW.birthdate);
         END IF;
@@ -32,21 +32,21 @@ BEGIN
      IF NEW.frequentflieron is null THEN 
         DELETE FROM ffairlines where customerid = NEW.customerid; 
      END IF;
-     points =  (with test as (select * from flights natural join (select flightid from flewon where customerid = NEW.customerid and flightid like NEW.frequentflieron || '%') 
+     points_ =  (with test as (select * from flights natural join (select flightid from flewon where customerid = NEW.customerid and flightid like NEW.frequentflieron || '%') 
          as newcust ) select sum (extract(hour from (local_arrival_time - local_departing_time))* 60 + extract(minute from (local_arrival_time- local_departing_time)) ) from test); 
         --INSERT INTO ffairlines(customerid,airlineid, points) VALUES (NEW.customerid, NEW.frequentflieron, points);
-        IF points >= 500 THEN
+        IF points_ >= 500 THEN
          stat = 'GOLD';
-         ELSIF points < 750 and points >=500 THEN
+         ELSIF points_ < 750 and points_ >=500 THEN
          stat = 'SILVER';
          ELSE 
-         IF points is null THEN points = 0; END IF;
+         IF points_ is null THEN points_ = 0; END IF;
          stat = 'BRONZE';
          END IF;
      IF NEW.frequentflieron not in (select airlineid from ffairlines where customerid = NEW.customerid) and NEW.frequentflieron is not null THEN 
-        INSERT INTO ffairlines(customerid,airlineid, points,status) VALUES (NEW.customerid, NEW.frequentflieron, points,stat);
+        INSERT INTO ffairlines(customerid,airlineid, points,status) VALUES (NEW.customerid, NEW.frequentflieron, points_,stat);
        ELSE
-        UPDATE ffairlines set customerid = NEW.customerid where customerid = NEW.customerid;
+        UPDATE ffairlines set customerid = NEW.customerid, points = points_, status = stat where customerid = NEW.customerid and airlineid = NEW.frequentflieron;
         END IF;
      END IF;
 
