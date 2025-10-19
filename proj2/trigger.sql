@@ -14,7 +14,7 @@ BEGIN
         points_ = (with test as (select * from flights natural join (select flightid from flewon where customerid = NEW.customerid and flightid like NEW.frequentflieron || '%') 
          as newcust ) select sum (extract(hour from (local_arrival_time - local_departing_time))* 60 + extract(minute from (local_arrival_time- local_departing_time)) ) from test);
          --INSERT INTO newcustomers(customerid, name, birthdate) VALUES (NEW.customerid,NEW.name,NEW.birthdate);
-         IF points_ >= 500 THEN
+         IF points_ >= 750 THEN
          stat = 'GOLD';
          ELSIF points_ < 750 and points_ >=500 THEN
          stat = 'SILVER';
@@ -126,16 +126,23 @@ CREATE OR REPLACE FUNCTION flewon_updated() RETURNS trigger as $$
 DECLARE 
 -- ANY VARIABLES GO HERE 
 points_ int; 
-
-old_points int;
 ff varchar(2);
+stat varchar(6);
 BEGIN 
     IF TG_OP = 'INSERT' OR TG_OP = 'UPDATE' THEN 
     points_ = (with allpoints as (select * from flights natural join (select flightid from flewon where customerid = NEW.customerid ) as custflight), totpoints as ( select airlineid, sum(extract (hour from (local_arrival_time - local_departing_time)) * 60 + extract(minute from (local_arrival_time - local_departing_time)))
    as points from allpoints group by airlineid) select points  from totpoints where NEW.flightid like airlineid || '%'); -- fives e
     ff =  (with allpoints as (select * from flights natural join (select flightid from flewon where customerid = NEW.customerid ) as custflight), totpoints as ( select airlineid, sum(extract (hour from (local_arrival_time - local_departing_time)) * 60 + extract(minute from (local_arrival_time - local_departing_time)))
    as points from allpoints group by airlineid) select airlineid  from totpoints where NEW.flightid like airlineid || '%');
-    UPDATE ffairlines SET points = points_ where customerid = NEW.customerid and airlineid = ff;
+    IF points_ >= 750 THEN
+         stat = 'GOLD';
+        ELSIF points_ < 750 and points_ >=500 THEN
+         stat = 'SILVER';
+         ELSE 
+         IF points_ is null THEN points_ = 0; END IF;
+         stat = 'BRONZE';
+         END IF;
+    UPDATE ffairlines SET points = points_ ,status = stat where customerid = NEW.customerid and airlineid = ff;
     END IF;
 
     IF TG_OP = 'UPDATE' THEN 
@@ -143,7 +150,15 @@ BEGIN
    as points from allpoints group by airlineid) select points  from totpoints where OLD.flightid like airlineid || '%');
    IF points_ is null THEN points_ = 0; END IF;
     ff = (select airlineid from airlines where OLD.flightid like airlineid || '%');
-    UPDATE  ffairlines set points = points_ where customerid = OLD.customerid and airlineid = ff;
+     IF points_ >= 750 THEN
+         stat = 'GOLD';
+        ELSIF points_ < 750 and points_ >=500 THEN
+         stat = 'SILVER';
+         ELSE 
+         IF points_ is null THEN points_ = 0; END IF;
+         stat = 'BRONZE';
+         END IF;
+    UPDATE  ffairlines set points = points_, status = stat where customerid = OLD.customerid and airlineid = ff;
 
     END IF;
 
@@ -153,7 +168,15 @@ BEGIN
    as points from allpoints group by airlineid) select points  from totpoints where OLD.flightid like airlineid || '%');
     ff =  (with allpoints as (select * from flights natural join (select flightid from flewon where customerid = OLD.customerid ) as custflight), totpoints as ( select airlineid, sum(extract (hour from (local_arrival_time - local_departing_time)) * 60 + extract(minute from (local_arrival_time - local_departing_time)))
    as points from allpoints group by airlineid) select airlineid  from totpoints where OLD.flightid like airlineid || '%');
-    UPDATE ffairlines SET points = points_ where customerid = OLD.customerid and airlineid = ff;
+    IF points_ >= 750 THEN
+         stat = 'GOLD';
+        ELSIF points_ < 750 and points_ >=500 THEN
+         stat = 'SILVER';
+         ELSE 
+         IF points_ is null THEN points_ = 0; END IF;
+         stat = 'BRONZE';
+         END IF;
+    UPDATE ffairlines SET points = points_, status = stat where customerid = OLD.customerid and airlineid = ff;
     END IF;
 
     RETURN NULL;
