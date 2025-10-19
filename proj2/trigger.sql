@@ -35,9 +35,9 @@ BEGIN
      points_ =  (with test as (select * from flights natural join (select flightid from flewon where customerid = NEW.customerid and flightid like NEW.frequentflieron || '%') 
          as newcust ) select sum (extract(hour from (local_arrival_time - local_departing_time))* 60 + extract(minute from (local_arrival_time- local_departing_time)) ) from test); 
         --INSERT INTO ffairlines(customerid,airlineid, points) VALUES (NEW.customerid, NEW.frequentflieron, points);
-        IF points_ >= 500 THEN
+        IF points_ >= 750 THEN
          stat = 'GOLD';
-         ELSIF points_ < 750 and points_ >=500 THEN
+        ELSIF points_ < 750 and points_ >=500 THEN
          stat = 'SILVER';
          ELSE 
          IF points_ is null THEN points_ = 0; END IF;
