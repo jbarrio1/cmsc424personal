@@ -351,6 +351,7 @@ class LeafNode extends BPlusNode {
             buf.putInt(rightSibling.get());
         } else {
             buf.put((byte)0);
+            buf.putInt(0);
         }
         buf.putInt(keys.size());
         for (int i = 0; i < keys.size(); ++i) {
@@ -385,17 +386,16 @@ class LeafNode extends BPlusNode {
         if (buf.get() == (byte)1) {
             rightsib = Optional.of(buf.getInt());
         } else {
+            buf.getInt();
             rightsib = Optional.empty();
         }
 
         int numOfKeys = buf.getInt();
 
         // need info on how to interpret the bytes since it depends on the data type
-        int keySize = metadata.getKeySchema().getSizeInBytes();
-        Type keyType = metadata.getKeySchema();
 
         for (int i = 0; i < numOfKeys; ++i) {
-            keys.add(DataBox.fromBytes(buf,keyType));
+            keys.add(DataBox.fromBytes(buf,metadata.getKeySchema()));
             rids.add(new RecordId(buf.getInt(),buf.getShort()));
         }
 
