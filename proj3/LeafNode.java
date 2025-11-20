@@ -189,7 +189,11 @@ class LeafNode extends BPlusNode {
     // See BPlusNode.remove.
     @Override
     public void remove(BaseTransaction transaction, DataBox key) {
-        throw new UnsupportedOperationException("Implement this.");
+        if (keys.contains(key)) {
+            rids.remove(keys.indexOf(key));
+            keys.remove(key);
+        }
+        sync(transaction);
     }
 
     // Iterators /////////////////////////////////////////////////////////////////
@@ -331,7 +335,7 @@ class LeafNode extends BPlusNode {
 
         int isLeaf = 1;
         int hasRightSib = 1;
-        int sibPageId = Integer.BYTES;
+        int sibPageId  = Integer.BYTES;
         int numOfKeys = Integer.BYTES;
         int totBytesForKeys = metadata.getKeySchema().getSizeInBytes() * keys.size();
         int totBytesForRids = (Integer.BYTES  + Short.BYTES )*  rids.size();
@@ -377,6 +381,7 @@ class LeafNode extends BPlusNode {
         var keys = new ArrayList<DataBox>();
         var rids = new ArrayList<RecordId>();
         Optional<Integer> rightsib;
+
         if (buf.get() == (byte)1) {
             rightsib = Optional.of(buf.getInt());
         } else {

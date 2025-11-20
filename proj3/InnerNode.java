@@ -151,7 +151,9 @@ class InnerNode extends BPlusNode {
     // See BPlusNode.remove.
     @Override
     public void remove(BaseTransaction transaction, DataBox key) {
-        throw new UnsupportedOperationException("Implement this.");
+        var targetLeaf = this.get(transaction, key);
+        targetLeaf.remove(transaction,key);
+        sync(transaction);
     }
 
     // Helpers ///////////////////////////////////////////////////////////////////
