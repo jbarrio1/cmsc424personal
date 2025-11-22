@@ -160,8 +160,8 @@ class LeafNode extends BPlusNode {
         } else{
 
             // splitting
-            var rightNodeKeys = keys.subList(this.metadata.getOrder(), keys.size() - 1);
-            var rightNodeRids =  rids.subList(this.metadata.getOrder(), rids.size() -1);
+            var rightNodeKeys = keys.subList(this.metadata.getOrder(), keys.size());
+            var rightNodeRids =  rids.subList(this.metadata.getOrder(), rids.size());
 
             // updating current leafNode
             keys = keys.subList(0, this.metadata.getOrder());

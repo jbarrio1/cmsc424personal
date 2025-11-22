@@ -18,6 +18,8 @@ import edu.umd.cs424.database.io.Page;
 import edu.umd.cs424.database.io.PageAllocator;
 import edu.umd.cs424.database.table.RecordId;
 
+import javax.xml.crypto.Data;
+
 /**
  * A persistent B+ tree.
  *
@@ -161,7 +163,7 @@ public class BPlusTree implements Closeable {
 	 * tree.get(new IntDataBox(100)); // Optional.empty()
 	 */
 	public Optional<RecordId> get(BaseTransaction transaction, DataBox key) {
-		throw new UnsupportedOperationException("Implement this.");
+        return this.root.get(transaction,key).getKey(key);
 	}
 
 	/**
@@ -264,7 +266,22 @@ public class BPlusTree implements Closeable {
 	 * tree.put(key, rid); // BPlusTreeException :(
 	 */
 	public void put(BaseTransaction transaction, DataBox key, RecordId rid) throws BPlusTreeException {
-		throw new UnsupportedOperationException("Implement this.");
+        var promoted = root.put(transaction, key, rid);
+
+        if (promoted.isEmpty()){
+            return;
+        }
+        List<DataBox> keys = new ArrayList<>();
+        List<Integer> children = new ArrayList<>();
+
+        // current node/root will be left subtree so it needs to be first
+        children.add(root.getPage().getPageNum());
+        children.add(promoted.get().getSecond());
+
+        keys.add(promoted.get().getFirst());
+        var newNode = new InnerNode(this.metadata, keys, children, transaction);
+        root = newNode;
+
 	}
 
 	/**
@@ -300,7 +317,7 @@ public class BPlusTree implements Closeable {
 	 * tree.get(key); // Optional.empty()
 	 */
 	public void remove(BaseTransaction transaction, DataBox key) {
-		throw new UnsupportedOperationException("Implement this.");
+		this.root.remove(transaction,key);
 	}
 
 	// Helpers /////////////////////////////////////////////////////////////////

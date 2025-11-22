@@ -81,6 +81,7 @@ class InnerNode extends BPlusNode {
             DataBox currentKey = listIt.next();
             if (key.compareTo(currentKey) < 0) {
                 found = true;
+
             } else if (key.equals(currentKey)) {
                 found = true;
                 targetLeafPageNum = pointerIt.next();
@@ -88,25 +89,49 @@ class InnerNode extends BPlusNode {
                 targetLeafPageNum = pointerIt.next();
             }
         }
-    //very wrong
-        return LeafNode.fromBytes(transaction,this.metadata,targetLeafPageNum);
+        var isItALeaf = BPlusNode.fromBytes(transaction,this.metadata,targetLeafPageNum);
+
+        return isItALeaf.get(transaction,key);
     }
+
 
     // See BPlusNode.getLeftmostLeaf.
     @Override
     public LeafNode getLeftmostLeaf(BaseTransaction transaction) {
-
-        return LeafNode.fromBytes(transaction,this.metadata,children.get(0));
+        var leftNode = BPlusNode.fromBytes(transaction,this.metadata,children.get(0));
+        return leftNode.getLeftmostLeaf(transaction);
     }
 
     // See BPlusNode.put.
     @Override
     public Optional<Pair<DataBox, Integer>> put(BaseTransaction transaction, DataBox key, RecordId rid)
     throws BPlusTreeException {
-        var targetLeaf = this.get(transaction, key);
+        var c = this.keys.iterator();
+        var d = this.children.iterator();
 
-        var overFlowFlag = targetLeaf.put(transaction,key,rid);
+        int targetPageNum = d.next();
+        boolean found = false;
+
+        while(c.hasNext() && !false){
+            DataBox currentKey = c.next();
+            if (key.compareTo(currentKey) < 0) {
+                found = true;
+
+            } else if (key.equals(currentKey)) {
+                found = true;
+                targetPageNum = d.next();
+            } else {
+                targetPageNum   = d.next();
+            }
+        }
+
+        var nextNode = BPlusNode.fromBytes(transaction,this.metadata,targetPageNum);
+
+
+
+        var overFlowFlag = nextNode.put(transaction, key, rid);
         if (overFlowFlag.isEmpty()) {
+            sync(transaction);
             return Optional.empty();
         } else {
             var overFlowkey = overFlowFlag.get().getFirst();
@@ -121,22 +146,21 @@ class InnerNode extends BPlusNode {
                 sync(transaction);
                 return Optional.empty();
             } else {
-                var rightNodeKeys = keys.subList(this.metadata.getOrder()+1,keys.size()-1);
-                var rightNodeChildren = children.subList(this.metadata.getOrder()+1,children.size()-1);
+                var rightNodeKeys = keys.subList(this.metadata.getOrder()+1,keys.size());
+                var rightNodeChildren = children.subList(this.metadata.getOrder()+1,children.size());
 
                 var sendUpKey = keys.get(this.metadata.getOrder());
 
-                var newInnerNode = new InnerNode(this.metadata, rightNodeKeys, rightNodeChildren,transaction);
+                var newInnerNode = new InnerNode(this.metadata,rightNodeKeys, rightNodeChildren,transaction);
                 var newNodePageNum = newInnerNode.page.getPageNum();
 
-                keys = keys.subList(0,this.metadata.getOrder()-1);
-                children = children.subList(0,this.metadata.getOrder()-1);
+                keys = keys.subList(0,this.metadata.getOrder());
+                children = children.subList(0,this.metadata.getOrder()+1);
 
                 sync(transaction);
                 return Optional.of(new Pair(sendUpKey,newNodePageNum));
 
             }
-
 
         }
     }
@@ -324,6 +348,9 @@ class InnerNode extends BPlusNode {
     /**
      * InnerNode.fromBytes(t, meta, p) loads a InnerNode from page p of
      * meta.getAllocator().
+     *
+     *   private static InnerNode fromBytes(BaseTransaction transaction, InnerNode innerNode, BPlusTreeMetadata metadata, Integer targetLeafPageNum) {
+     *     }
      */
     public static InnerNode fromBytes(BaseTransaction transaction, BPlusTreeMetadata metadata,
                                       int pageNum) {
