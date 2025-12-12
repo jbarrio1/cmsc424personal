@@ -42,7 +42,18 @@ public class SortOperator {
      * iterator
      */
     public Run sortRun(Run run) throws DatabaseException {
-        throw new UnsupportedOperationException("Implement this.");
+         List<Record> needSort = new ArrayList<>();
+         var it = run.iterator();
+
+         while (it.hasNext()) {
+             needSort.add(it.next());
+         }
+         needSort.sort(this.comparator);
+
+         Run sortedRun = createRun();
+         sortedRun.addRecords(needSort);
+
+        return sortedRun;
     }
 
     /**
@@ -61,7 +72,37 @@ public class SortOperator {
      * Return a single sorted run obtained by merging the input runs
      */
     public Run mergeSortedRuns(List<Run> runs) throws DatabaseException {
-        throw new UnsupportedOperationException("Implement this.");
+        PriorityQueue<Pair<Record,Integer>> pq = new PriorityQueue<>(new RecordPairComparator());
+        List<Iterator<Record>> iterators = new ArrayList<>();
+
+        // getting iterators for all the runs
+        for ( Run run : runs ){
+            iterators.add(run.iterator());
+        }
+        // adding the first element of each list into priority queue
+        for (int i = 0 ; i < iterators.size() ; i++ ) {
+
+            //kind of dangerous if one of the runs is empty, I'm assuming they wont be empty
+            pq.add(new Pair(iterators.get(i).next(), i));
+        }
+
+        List<Record> mergedRuns = new ArrayList<>();
+        while(!pq.isEmpty()){
+            // add smallest element - assuming sorting is ascending order
+            var currSmallest = pq.poll();
+            mergedRuns.add(currSmallest.getFirst());
+
+            // add next element from run or skip if empty I have to check here
+            if (iterators.get(currSmallest.getSecond()).hasNext()) {
+                pq.add(new Pair (iterators.get(currSmallest.getSecond()).next(), currSmallest.getSecond()));
+            }
+        }
+
+
+        Run finalRun = createRun();
+        finalRun.addRecords(mergedRuns);
+
+        return finalRun;
     }
 
     /**
@@ -73,7 +114,29 @@ public class SortOperator {
      * Return a list of sorted runs obtained by merging the input runs
      */
     public List<Run> mergePass(List<Run> runs) throws DatabaseException {
-        throw new UnsupportedOperationException("Implement this.");
+        //I guess the first step is split the runs up example, lets say num buffers are 3 and runs.size() = 8
+        // I am going to return a list of (0,1) merged, (2,3) merged, (4,5) merged(6,7),
+        // lets say number buffers = 4 (3)  , (0,1,2) m , (3,4,5) m , (6,7) m runs.size() =8
+
+        // i = 2, whe
+        List<Run> merged = new ArrayList<>();
+        int start = 0;
+        for (int i = 0; i < runs.size(); i++){
+            var div = i % (this.numBuffers -1) ;
+            // we would be moving more than numbuffers -1 at this point
+            if ( div == 0 && i != 0 ) {
+                merged.add(mergeSortedRuns(runs.subList(start, i)));
+                start = i;
+            }
+        }
+        // there is only one run left
+        if (start == runs.size() -1 ) {
+            merged.add(runs.get(start));
+        } else {
+            merged.add(mergeSortedRuns(runs.subList(start,runs.size())));
+        }
+
+        return merged;
     }
 
     /**
@@ -88,7 +151,49 @@ public class SortOperator {
      * 4. Merge the sorted runs.
      */
     public String sort() throws DatabaseException {
-        throw new UnsupportedOperationException("Implement this.");
+        // find out if the table is empty
+        var pageIt = transaction.getPageIterator(this.tableName);
+        var recordIt = transaction.getBlockIterator(this.tableName, pageIt);
+        if (!recordIt.hasNext()){
+            throw new DatabaseException("This relation was empty (didn't return any records");
+        }
+        // createRuns which is basically numbuf -1 pages -> sort
+        int marker = 0;
+        List<Record> tempRun = new ArrayList<>();
+        List<Run> sortedRuns = new ArrayList<>();
+
+        while (pageIt.hasNext()){
+            var div = marker % (this.numBuffers -1 );
+
+            // run is ready to be created
+            if (div ==0 &&  marker !=0  ) {
+                var runReady = createRun();
+                runReady.addRecords(tempRun);
+                sortedRuns.add(sortRun(runReady));
+                // reset tempRun
+                tempRun.clear();
+                marker++;
+
+            } else {
+                // add the records to the current run
+                var pageRecords = this.transaction.getBlockIterator(this.tableName,pageIt,1);
+                while (pageRecords.hasNext()){
+                    tempRun.add(pageRecords.next());
+                }
+                marker++;
+            }
+        }
+        if (!tempRun.isEmpty()){
+            var runReady = createRun();
+            runReady.addRecords(tempRun);
+            sortedRuns.add(sortRun(runReady));
+        }
+
+        // check if merging  can be done in one pass && seems like this the assumption
+
+        var singleRun = mergePass(sortedRuns);
+        var finalRun = singleRun.get(0);
+        return finalRun.tableName();
     }
 
     public Iterator<Record> iterator() throws DatabaseException {
