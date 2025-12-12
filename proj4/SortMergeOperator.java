@@ -92,10 +92,21 @@ public class SortMergeOperator extends JoinOperator {
                 if (this.rightRecord != null && lr_comparator.compare(this.leftRecord, this.rightRecord) == 0) {
                     // Join the left and right record and return the result. The right record must be
                     // advanced before returning. If there is no more right record, set it to null.
-                    throw new UnsupportedOperationException("Implement this.");
+
+                    var right = rightRecord;
+                    if (rightSourceIterator.hasNext()){
+                        rightRecord = rightSourceIterator.next();
+                    } else {
+                        rightRecord = null;
+                    }
+                    return generateJoinRecord(leftRecord,right);
+
                 } else if (this.leftSourceIterator.hasNext()) {
                     // Advance the left record by one and reset the right record.
-                    throw new UnsupportedOperationException("Implement this.");
+                    leftRecord = leftSourceIterator.next();
+                    rightSourceIterator.reset();
+                    rightRecord = rightSourceIterator.next();
+
                 } else {
                     return null;
                 }
